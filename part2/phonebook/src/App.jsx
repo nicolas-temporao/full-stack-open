@@ -125,6 +125,7 @@ const App = () => {
       })
       .catch(()=>{
         showMessage(`Failed to update ${name}`, 'error')
+        setPersons(persons.filter(person => person.id !== existingPerson.id))
       })
     }
   }
