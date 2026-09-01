@@ -35,9 +35,6 @@ let phoneEntries = [
       "number": "39-23-6423122"
     }
 ]
-app.get('/', (request,response) => {
-    response.send("<p>Main page</p>")
-})
 
 app.get('/info', (request, response) => {
   response.send(`
