@@ -90,7 +90,7 @@ const App = () => {
         setNewNumber('')
       })
       .catch(()=>{
-        showMessage(`Failed to add person`, 'error')
+        showMessage(error.response.data.error, 'error')
       })
     }
   }

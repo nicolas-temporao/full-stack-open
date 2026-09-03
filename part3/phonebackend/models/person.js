@@ -14,7 +14,10 @@ mongoose.connect(url, { family: 4 })
         console.log('error connecting:', error.message)   
     })
 
-const personSchema = new mongoose.Schema({ name: String, number: String })
+const personSchema = new mongoose.Schema({
+  name: { type: String, minLength: 3, required: true },
+  number: String
+})
 
 personSchema.set('toJSON', {
   transform: (document, returnedObject) => {
