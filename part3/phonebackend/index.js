@@ -48,15 +48,14 @@ app.get('/api/persons', (request, response) => {
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  const entry = phoneEntries.find(entry => entry.id === id)
-
-  if (entry) {
-     response.json(entry)
-  } else {
-    response.status(404).end()
-  }
- 
+  Person.findById(request.params.id)
+    .then(person=>
+      {if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
