@@ -29,7 +29,7 @@ const errorHandler = (error, request, response, next) => {
 
 
 app.get('/info', (request, response, next) => {
-    Person.countDoucuments({})
+    Person.countDocuments({})
     .then(count => {response.send(`
         <p>Phonebook has info for ${count} people</p>
         <p>${new Date()}</p>`) 
@@ -79,7 +79,7 @@ app.post('/api/persons', (request, response, next) => {
     .save()
     .then(savedPerson => {
       response.json(savedPerson)
-    })
+    }).catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
