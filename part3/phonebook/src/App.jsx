@@ -123,9 +123,8 @@ const App = () => {
         setNewNumber('')
         showMessage(`Changed number for: ${name}`, 'success')
       })
-      .catch(()=>{
-        showMessage(`Failed to update ${name}`, 'error')
-        setPersons(persons.filter(person => person.id !== existingPerson.id))
+      .catch(error => {
+        showMessage(error.response.data.error, 'error')
       })
     }
   }
