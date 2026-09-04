@@ -7,19 +7,19 @@ mongoose.set('strictQuery', false)
 
 console.log('Connecting to MongoDB...')
 mongoose.connect(url, { family: 4 })
-    .then(() => {
-        console.log('Connected.')
-    })
-    .catch(error => {
-        console.log('error connecting:', error.message)   
-    })
+  .then(() => {
+    console.log('Connected.')
+  })
+  .catch(error => {
+    console.log('error connecting:', error.message)
+  })
 
 const numberValidator = (value) => {
   return /^\d{2,3}-\d+$/.test(value)
 }
 const personSchema = new mongoose.Schema({
   name: { type: String, minLength: 3, required: true },
-  number: { type: String, minLength: 8, required: true, validate: {validator: numberValidator, message: props => `${props.value} is not a valid phone number`}}
+  number: { type: String, minLength: 8, required: true, validate: { validator: numberValidator, message: props => `${props.value} is not a valid phone number` } }
 })
 
 personSchema.set('toJSON', {
@@ -30,6 +30,6 @@ personSchema.set('toJSON', {
   }
 })
 
-const Person = mongoose.model('Person', personSchema) 
+const Person = mongoose.model('Person', personSchema)
 
 module.exports = Person
