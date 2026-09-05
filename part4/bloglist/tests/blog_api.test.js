@@ -29,6 +29,7 @@ const newBlog = {
     "likes": 2
 }
 
+
 beforeEach(async () => {
     await Blog.deleteMany({})
     await Blog.insertMany(initialBlogs)
@@ -67,6 +68,56 @@ test('creation of new blog post works', async () => {
     
     const titleList = response.body.map(blog => blog.title)
     assert(titleList.includes('New Blog Post'))
+})
+
+test('likes property defaults to 0 if missing', async () => {
+    const { likes, ...noLikesBlog} = newBlog
+
+    const response = await api
+        .post('/api/blogs').send(noLikesBlog)
+        .expect(201)
+
+    assert.strictEqual(response.body.likes, 0)
+})
+
+test('blog without title is rejected', async () => {
+    const { title, ...noTitleBlog} = newBlog
+    await api
+        .post('/api/blogs').send(noTitleBlog)
+        .expect(400)
+})
+
+test('blog without url is rejected', async () => {
+    const { url, ...noUrlBlog} = newBlog
+    await api
+        .post('/api/blogs').send(noUrlBlog)
+        .expect(400)
+})
+
+test('deleting a blog', async () => {
+    const blogsBeforeDelete = await api.get('/api/blogs')
+    const blogToDelete = blogsBeforeDelete.body[0]
+
+    await api.delete(`/api/blogs/${blogToDelete.id}`)
+    .expect(204)
+    const blogsAfter = await api.get('/api/blogs')
+
+    assert.strictEqual(blogsAfter.body.length, initialBlogs.length - 1)
+
+    const titles = blogsAfter.body.map(blog => blog.title)
+    assert(!titles.includes(blogToDelete.title))
+})
+
+test('updating likes of a blog', async () => {
+    const blogs = await api.get('/api/blogs')
+    const updateBlog = blogs.body[0]
+
+    const updatedLikes = updateBlog.likes + 1
+
+    const response = await api.put(`/api/blogs/${updateBlog.id}`).send({ likes: updatedLikes })
+    .expect(200)
+
+    assert.strictEqual(response.body.likes, updatedLikes)
 })
 
 after (async () => {
