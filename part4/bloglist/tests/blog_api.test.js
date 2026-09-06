@@ -1,4 +1,4 @@
-const { test, after, beforeEach } = require('node:test')
+const { test, after, beforeEach, describe } = require('node:test')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
@@ -30,94 +30,97 @@ const newBlog = {
 }
 
 
-beforeEach(async () => {
-    await Blog.deleteMany({})
-    await Blog.insertMany(initialBlogs)
-})
+describe('With initial blogs saved in DB', () => {
+    test('blogs are returned as JSON', async () => {
+        await api
+            .get('/api/blogs')
+            .expect(200)
+            .expect('Content-Type', /application\/json/)
+    })
 
-test('blogs are returned as JSON', async () => {
-    await api
-        .get('/api/blogs')
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-})
+    test('all blogs returned', async () => {
+        const response = await api.get('/api/blogs')
+        assert.strictEqual(response.body.length, initialBlogs.length)
+    })
 
-test('all blogs returned', async () => {
-    const response = await api.get('/api/blogs')
-    assert.strictEqual(response.body.length, initialBlogs.length)
-})
+    test('unique identifier is id', async () => {
+        const response = await api
+            .get('/api/blogs')
+            .expect(200)
 
-test('unique identifier is id', async () => {
-    const response = await api
-        .get('/api/blogs')
-        .expect(200)
-
-    response.body.forEach(blog => {
-        assert.ok(blog.id)
+        response.body.forEach(blog => {
+            assert.ok(blog.id)
+        })
     })
 })
 
-test('creation of new blog post works', async () => {
-    await api
-        .post('/api/blogs').send(newBlog)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
 
-    const response = await api.get('/api/blogs')
-    assert.strictEqual(response.body.length, initialBlogs.length + 1)
-    
-    const titleList = response.body.map(blog => blog.title)
-    assert(titleList.includes('New Blog Post'))
+describe('Creation of Blogs', () => {
+    test('creation of new blog post works', async () => {
+        await api
+            .post('/api/blogs').send(newBlog)
+            .expect(201)
+            .expect('Content-Type', /application\/json/)
+
+        const response = await api.get('/api/blogs')
+        assert.strictEqual(response.body.length, initialBlogs.length + 1)
+        
+        const titleList = response.body.map(blog => blog.title)
+        assert(titleList.includes('New Blog Post'))
+    })
+
+    test('likes property defaults to 0 if missing', async () => {
+        const { likes, ...noLikesBlog} = newBlog
+
+        const response = await api
+            .post('/api/blogs').send(noLikesBlog)
+            .expect(201)
+
+        assert.strictEqual(response.body.likes, 0)
+    })
+
+    test('blog without title is rejected', async () => {
+        const { title, ...noTitleBlog} = newBlog
+        await api
+            .post('/api/blogs').send(noTitleBlog)
+            .expect(400)
+    })
+
+    test('blog without url is rejected', async () => {
+        const { url, ...noUrlBlog} = newBlog
+        await api
+            .post('/api/blogs').send(noUrlBlog)
+            .expect(400)
+    })
+
 })
 
-test('likes property defaults to 0 if missing', async () => {
-    const { likes, ...noLikesBlog} = newBlog
+describe('Deletion/Updating of Blogs', () => {
+    test('deleting a blog', async () => {
+        const blogsBeforeDelete = await api.get('/api/blogs')
+        const blogToDelete = blogsBeforeDelete.body[0]
 
-    const response = await api
-        .post('/api/blogs').send(noLikesBlog)
-        .expect(201)
+        await api.delete(`/api/blogs/${blogToDelete.id}`)
+        .expect(204)
+        const blogsAfter = await api.get('/api/blogs')
 
-    assert.strictEqual(response.body.likes, 0)
-})
+        assert.strictEqual(blogsAfter.body.length, initialBlogs.length - 1)
 
-test('blog without title is rejected', async () => {
-    const { title, ...noTitleBlog} = newBlog
-    await api
-        .post('/api/blogs').send(noTitleBlog)
-        .expect(400)
-})
+        const titles = blogsAfter.body.map(blog => blog.title)
+        assert(!titles.includes(blogToDelete.title))
+    })
 
-test('blog without url is rejected', async () => {
-    const { url, ...noUrlBlog} = newBlog
-    await api
-        .post('/api/blogs').send(noUrlBlog)
-        .expect(400)
-})
+    test('updating likes of a blog', async () => {
+        const blogs = await api.get('/api/blogs')
+        const updateBlog = blogs.body[0]
 
-test('deleting a blog', async () => {
-    const blogsBeforeDelete = await api.get('/api/blogs')
-    const blogToDelete = blogsBeforeDelete.body[0]
+        const updatedLikes = updateBlog.likes + 1
 
-    await api.delete(`/api/blogs/${blogToDelete.id}`)
-    .expect(204)
-    const blogsAfter = await api.get('/api/blogs')
+        const response = await api.put(`/api/blogs/${updateBlog.id}`).send({ likes: updatedLikes })
+        .expect(200)
 
-    assert.strictEqual(blogsAfter.body.length, initialBlogs.length - 1)
-
-    const titles = blogsAfter.body.map(blog => blog.title)
-    assert(!titles.includes(blogToDelete.title))
-})
-
-test('updating likes of a blog', async () => {
-    const blogs = await api.get('/api/blogs')
-    const updateBlog = blogs.body[0]
-
-    const updatedLikes = updateBlog.likes + 1
-
-    const response = await api.put(`/api/blogs/${updateBlog.id}`).send({ likes: updatedLikes })
-    .expect(200)
-
-    assert.strictEqual(response.body.likes, updatedLikes)
+        assert.strictEqual(response.body.likes, updatedLikes)
+    })
 })
 
 after (async () => {
