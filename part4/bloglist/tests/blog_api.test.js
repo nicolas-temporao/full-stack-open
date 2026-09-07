@@ -3,8 +3,9 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const assert = require('node:assert')
-
+const bcrypt = require('bcrypt')
 const api = supertest(app)
 
 const initialBlogs = [
@@ -28,7 +29,37 @@ const newBlog = {
     "url": "https://example.com",
     "likes": 2
 }
+let token
 
+beforeEach(async () => {
+  await Blog.deleteMany({})
+  await User.deleteMany({})
+
+  const passwordHash = await bcrypt.hash('password', 10)
+
+  const user = new User({
+    username: 'root',
+    name: 'Admin',
+    passwordHash
+  })
+
+  await user.save()
+
+  const savedBlogs = await Blog.insertMany(
+    initialBlogs.map(blog => ({
+        ...blog, user: user._id
+    }))
+  )
+
+  const loginResponse = await api
+    .post('/api/login')
+    .send({
+      username: 'root',
+      password: 'password'
+    })
+
+  token = loginResponse.body.token
+})
 
 describe('With initial blogs saved in DB', () => {
     test('blogs are returned as JSON', async () => {
@@ -58,7 +89,9 @@ describe('With initial blogs saved in DB', () => {
 describe('Creation of Blogs', () => {
     test('creation of new blog post works', async () => {
         await api
-            .post('/api/blogs').send(newBlog)
+            .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newBlog)
             .expect(201)
             .expect('Content-Type', /application\/json/)
 
@@ -69,11 +102,19 @@ describe('Creation of Blogs', () => {
         assert(titleList.includes('New Blog Post'))
     })
 
+    test('creation fails with 401 if token is missing', async () => {
+        await api
+            .post('/api/blogs')
+            .send(newBlog)
+            .expect(401)
+    })
+
     test('likes property defaults to 0 if missing', async () => {
         const { likes, ...noLikesBlog} = newBlog
 
         const response = await api
             .post('/api/blogs').send(noLikesBlog)
+            .set('Authorization', `Bearer ${token}`)
             .expect(201)
 
         assert.strictEqual(response.body.likes, 0)
@@ -83,6 +124,7 @@ describe('Creation of Blogs', () => {
         const { title, ...noTitleBlog} = newBlog
         await api
             .post('/api/blogs').send(noTitleBlog)
+            .set('Authorization', `Bearer ${token}`)
             .expect(400)
     })
 
@@ -90,6 +132,7 @@ describe('Creation of Blogs', () => {
         const { url, ...noUrlBlog} = newBlog
         await api
             .post('/api/blogs').send(noUrlBlog)
+            .set('Authorization', `Bearer ${token}`)
             .expect(400)
     })
 
@@ -100,7 +143,9 @@ describe('Deletion/Updating of Blogs', () => {
         const blogsBeforeDelete = await api.get('/api/blogs')
         const blogToDelete = blogsBeforeDelete.body[0]
 
-        await api.delete(`/api/blogs/${blogToDelete.id}`)
+        await api
+        .delete(`/api/blogs/${blogToDelete.id}`)
+        .set('Authorization', `Bearer ${token}`)
         .expect(204)
         const blogsAfter = await api.get('/api/blogs')
 
