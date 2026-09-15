@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1789434687440" clover="3.2.0">
+  <project timestamp="1789434687440" name="All files">
+    <metrics statements="8" coveredstatements="5" conditionals="6" coveredconditionals="2" methods="4" coveredmethods="1" elements="18" coveredelements="8" complexity="0" loc="8" ncloc="8" packages="1" files="1" classes="1"/>
+    <file name="Blog.jsx" path="C:\Users\nickt\Documents\GitHub\full-stack-open\part5\bloglist-frontend\src\components\Blog.jsx">
+      <metrics statements="8" coveredstatements="5" conditionals="6" coveredconditionals="2" methods="4" coveredmethods="1"/>
+      <line num="3" count="1" type="stmt"/>
+      <line num="4" count="1" type="stmt"/>
+      <line num="6" count="1" type="stmt"/>
+      <line num="8" count="1" type="stmt"/>
+      <line num="16" count="1" type="stmt"/>
+      <line num="20" count="0" type="stmt"/>
+      <line num="30" count="0" type="stmt"/>
+      <line num="36" count="0" type="stmt"/>
+    </file>
+  </project>
+</coverage>

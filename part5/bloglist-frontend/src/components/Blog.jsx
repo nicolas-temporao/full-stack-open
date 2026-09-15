@@ -3,7 +3,7 @@ import { useState } from 'react'
 const Blog = ({ blog, handleLike, user, handleRemove }) => {
   const [visible, setVisible] = useState(false)
 
-  const removePerm = blog.user?.username === user.username
+  const removePerm = blog.user?.username === user?.username
 
   const blogStyle = {
     paddingTop: 10,
@@ -33,9 +33,9 @@ const Blog = ({ blog, handleLike, user, handleRemove }) => {
           </div>
           <div>added by {blog.user?.name}</div>
           {removePerm && (
-          <button onClick={() => handleRemove(blog)}>
+            <button onClick={() => handleRemove(blog)}>
               remove
-          </button>
+            </button>
           )}
         </div>
       )}

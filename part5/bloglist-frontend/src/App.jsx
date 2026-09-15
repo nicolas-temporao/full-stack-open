@@ -14,16 +14,13 @@ const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  const [title, setTitle] = useState('')
-  const [author, setAuthor] = useState('')
-  const [url, setUrl] = useState('')
   const [message, setMessage] = useState(null)
   const [messageType, setMessageType] = useState(null)
 
   useEffect(() => {
     blogService.getAll().then(blogs =>
       setBlogs( blogs )
-    )  
+    )
   }, [])
 
   useEffect(() => {
@@ -47,46 +44,35 @@ const App = () => {
 
   const handleLogin = async (event) => {
     event.preventDefault()
-    try { 
-      const user = await loginService.login({username, password})
-      
+    try {
+      const user = await loginService.login({ username, password })
+
       window.localStorage.setItem('loggedInUser', JSON.stringify(user))
 
       blogService.setToken(user.token)
       setUser(user)
       setUsername('')
       setPassword('')
-      showMessage(`Login Successful`, 'success')
-    } catch (error){
-      showMessage(`Wrong username or password`, 'error')
+      showMessage('Login Successful', 'success')
+    } catch {
+      showMessage('Wrong username or password', 'error')
     }
   }
 
-  const handleNewBlog = async (event) => {
-    event.preventDefault()
-
+  const handleNewBlog = async (newBlog) => {
     try {
-      const newBlog = {
-        title,
-        author,
-        url
-      }
-
       const createdBlog = await blogService.create(newBlog)
-      
 
       const blogWithUser = {
         ...createdBlog,
         user
       }
+
       setBlogs(prevBlogs => prevBlogs.concat(blogWithUser))
 
-      showMessage(`A new blog "${title}" by ${author} added`, 'success')
-      setTitle('')
-      setAuthor('')
-      setUrl('')
-    } catch (error){
-      showMessage('Failed to create new blog', 'error')
+      showMessage(`A new blog ${createdBlog.title} by ${createdBlog.author} added`, 'success')
+    } catch (error) {
+      showMessage('Failed to create blog', 'error')
     }
   }
 
@@ -94,7 +80,7 @@ const App = () => {
     setUser(null)
     blogService.setToken(null)
     window.localStorage.removeItem('loggedInUser')
-    
+
   }
 
   const handleLike = async(blog) => {
@@ -121,19 +107,19 @@ const App = () => {
         setBlogs(prevBlogs =>
           prevBlogs.filter(b => b.id !== blog.id)
         )
-      } catch (error) {
+      } catch {
         showMessage('Failed to delete blog', 'error')
       }
     }
   }
-  
+
   const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes)
   return (
     <div>
       <Notification message={message} type={messageType} />
 
       {user === null ? (
-        <>
+        <div>
           <h2>Log in to application</h2>
           <LoginForm
             username={username}
@@ -142,24 +128,18 @@ const App = () => {
             handlePassChange={({ target }) => setPassword(target.value)}
             handleLogin={handleLogin}
           />
-        </>
+        </div>
       ) : (
-        <>
+        <div>
           <p>{user.name} logged in.</p>
           <button onClick={handleLogout}>Logout</button>
 
           <Togglable buttonLabel="create new blog">
             <BlogForm
-              title={title}
-              author={author}
-              url={url}
-              handleTitleChange={({ target }) => setTitle(target.value)}
-              handleAuthorChange={({ target }) => setAuthor(target.value)}
-              handleUrlChange={({ target }) => setUrl(target.value)}
-              handleNewBlog={handleNewBlog}
+              createBlog={handleNewBlog}
             />
           </Togglable>
-        </>
+        </div>
       )}
 
       <h2>blogs</h2>
