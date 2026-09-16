@@ -4,27 +4,27 @@ import { vi } from 'vitest'
 import BlogForm from './BlogForm'
 
 test('blogform calls handler with correct details', async () => {
-    const createBlog = vi.fn()
-    const user = userEvent.setup()
+  const createBlog = vi.fn()
+  const user = userEvent.setup()
 
-    render(<BlogForm createBlog = {createBlog}/>)
+  render(<BlogForm createBlog = {createBlog}/>)
 
-    const titleInput = screen.getByLabelText('Title:')
-    const authorInput = screen.getByLabelText('Author:')
-    const urlInput = screen.getByLabelText('Url:')
-    const createButton = screen.getByText('Create')
+  const titleInput = screen.getByLabelText('Title:')
+  const authorInput = screen.getByLabelText('Author:')
+  const urlInput = screen.getByLabelText('Url:')
+  const createButton = screen.getByText('Create')
 
-    await user.type(titleInput, 'Test Blog')
-    await user.type(authorInput, 'Tester')
-    await user.type(urlInput, 'url.com')
+  await user.type(titleInput, 'Test Blog')
+  await user.type(authorInput, 'Tester')
+  await user.type(urlInput, 'url.com')
 
-    await user.click(createButton)
+  await user.click(createButton)
 
-    expect(createBlog.mock.calls).toHaveLength(1)
-    expect(createBlog.mock.calls[0][0]).toEqual({
-        title: 'Test Blog',
-        author: 'Tester', 
-        url: 'url.com'
-    })
+  expect(createBlog.mock.calls).toHaveLength(1)
+  expect(createBlog.mock.calls[0][0]).toEqual({
+    title: 'Test Blog',
+    author: 'Tester',
+    url: 'url.com'
+  })
 
 })

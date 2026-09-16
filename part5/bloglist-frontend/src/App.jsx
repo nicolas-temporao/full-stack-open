@@ -71,7 +71,7 @@ const App = () => {
       setBlogs(prevBlogs => prevBlogs.concat(blogWithUser))
 
       showMessage(`A new blog ${createdBlog.title} by ${createdBlog.author} added`, 'success')
-    } catch (error) {
+    } catch {
       showMessage('Failed to create blog', 'error')
     }
   }

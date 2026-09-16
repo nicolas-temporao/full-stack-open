@@ -3,12 +3,14 @@ import globals from 'globals'
 import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import vitest from '@vitest/eslint-plugin'
 import { defineConfig } from 'eslint/config'
 
 export default defineConfig([
   {
     ignores: ['dist'],
   },
+
   {
     files: ['**/*.{js,jsx}'],
 
@@ -16,7 +18,7 @@ export default defineConfig([
       react,
     },
 
-    extends: [  
+    extends: [
       js.configs.recommended,
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
@@ -42,8 +44,26 @@ export default defineConfig([
       eqeqeq: 'error',
       'no-trailing-spaces': 'error',
       'object-curly-spacing': ['error', 'always'],
-      'arrow-spacing': ['error', { before: true, after: true }],
+      'arrow-spacing': ['error', {
+        before: true,
+        after: true,
+      }],
       'no-console': 'off',
+    },
+  },
+
+  {
+    files: ['**/*.test.{js,jsx}'],
+
+    plugins: {
+      vitest,
+    },
+
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...vitest.environments.env.globals,
+      },
     },
   },
 ])
