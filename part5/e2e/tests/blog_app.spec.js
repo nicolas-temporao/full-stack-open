@@ -1,33 +1,182 @@
 const { test, expect, beforeEach, describe } = require('@playwright/test')
 
 describe('Blog app', () => {
-  beforeEach(async ({ page }) => {
+  beforeEach(async ({ page, request }) => {
     await request.post('http://localhost:3003/api/testing/reset')
 
     await request.post('http://localhost:3003/api/users', {
-        data: {
-            name: 'Nick',
-            username: 'nick',
-            password: 'password'
-        }
+      data: {
+        name: 'Nick',
+        username: 'nick',
+        password: 'password'
+      }
     })
 
     await page.goto('http://localhost:5173')
   })
 
   test('Login form is shown', async ({ page }) => {
-
     await expect(page.getByText('Log in to application')).toBeVisible()
     await expect(page.getByLabel('username')).toBeVisible()
     await expect(page.getByLabel('password')).toBeVisible()
     await expect(page.getByRole('button', { name: 'login' })).toBeVisible()
   })
 
-  test('user can log in', async({page}) => {
-    await page.getByLabel('username').fill('nick')
-    await page.getByLabel('password').fill('password')
-    await page.getByRole('button', { name: 'login' }).click()
-    await expect(page.getByText('Nick logged in.')).toBeVisible()
+  describe('Login', () => {
+    test('succeeds with correct credentials', async ({ page }) => {
+      await page.getByLabel('username').fill('nick')
+      await page.getByLabel('password').fill('password')
+      await page.getByRole('button', { name: 'login' }).click()
+
+      await expect(page.getByText('Nick logged in.')).toBeVisible()
+    })
+
+    test('fails with wrong credentials', async ({ page }) => {
+      await page.getByLabel('username').fill('nick')
+      await page.getByLabel('password').fill('wrongpassword')
+      await page.getByRole('button', { name: 'login' }).click()
+
+      const errorDiv = page.locator('.error')
+
+      await expect(errorDiv).toContainText('Wrong username or password')
+      await expect(errorDiv).toHaveCSS('border-style', 'solid')
+      await expect(errorDiv).toHaveCSS('color', 'rgb(255, 0, 0)')
+
+      await expect(
+        page.getByText('Nick logged in.')
+      ).not.toBeVisible()
+    })
   })
 
+
+  describe('When logged in', () => {
+    beforeEach(async ({ page }) => {
+      await page.getByLabel('username').fill('nick')
+      await page.getByLabel('password').fill('password')
+      await page.getByRole('button', { name: 'login' }).click()
+    })
+
+    test('a new blog can be created', async ({ page }) => {
+      await page.getByRole('button', { name: 'create new blog' }).click()
+      await page.getByLabel('Title:').fill('Test Blog')
+      await page.getByLabel('Author:').fill('Tester')
+      await page.getByLabel('Url:').fill('https://example.com')
+
+      await page.getByRole('button', { name: 'Create' }).click()
+
+      const successDiv = page.locator('.success')
+      await expect(successDiv).toContainText('A new blog Test Blog by Tester added')
+      await expect(successDiv).toHaveCSS('border-style', 'solid')
+      await expect(successDiv).toHaveCSS('color', 'rgb(0, 128, 0)')
+
+      await expect(page.getByText('Test Blog Tester')).toBeVisible()
+    })
+
+    describe('+ a blog exists', () => {
+      beforeEach(async({page}) => {
+        await page.getByRole('button', { name: 'create new blog' }).click()
+        await page.getByLabel('Title:').fill('Test Blog')
+        await page.getByLabel('Author:').fill('Tester')
+        await page.getByLabel('Url:').fill('https://example.com')
+        await page.getByRole('button', { name: 'Create' }).click()
+      }) 
+
+      test('blogs can be liked', async ({page}) => {
+        await page.getByRole('button', {name: 'view'}).click()
+        await expect(page.getByText('likes 0')).toBeVisible()
+
+        await page.getByRole('button', {name: 'like'}).click()
+        await expect(page.getByText('likes 1')).toBeVisible()
+      })
+
+      test('user who created blog can delete it', async ({page}) => {
+        page.on('dialog', async (dialog) => {
+          await dialog.accept()
+        })
+
+        await page.getByRole('button', {name: 'view'}).click()
+        await page.getByRole('button', {name: 'remove'}).click()
+
+        const successDiv = page.locator('.success')
+        await expect(successDiv).toContainText('Deleted blog successfully')  
+        await expect(page.getByText('Blog Test Tester')).not.toBeVisible()
+      })
+
+      test('only creator of blog can see remove on it', async({page, request}) => {
+        await page.getByRole('button', {name: 'view'}).click()
+        await expect(page.getByRole('button', {name: 'remove'})).toBeVisible()
+        
+
+        await page.getByRole('button', {name: 'Logout'}).click()
+        await request.post('http://localhost:3003/api/users', {
+          data: {
+            name: 'Other',
+            username: 'other',
+            password: 'password'
+          }
+        })
+        await page.getByLabel('username').fill('other')
+        await page.getByLabel('password').fill('password')
+        await page.getByRole('button', { name: 'login' }).click()
+
+        await expect(page.getByRole('button', {name: 'remove'})).not.toBeVisible()
+      })
+    })
+  })
+
+  test('blogs are ordered by likes', async({page,request})=> {
+    const response = await request.post('http://localhost:3003/api/login', {
+      data: {
+        username: 'nick',
+        password: 'password'
+      }
+    })
+
+    const loginData = await response.json()
+
+    await request.post('http://localhost:3003/api/blogs', {
+      data: {
+        title: 'lowest',
+        author: 'Nick',
+        url: 'low.com',
+        likes: 1
+      },
+      headers: {
+        Authorization: `Bearer ${loginData.token}`
+      }
+    })
+
+    await request.post('http://localhost:3003/api/blogs', {
+      data: {
+        title: 'highest',
+        author: 'Nick',
+        url: 'high.com',
+        likes: 10
+      },
+      headers: {
+        Authorization: `Bearer ${loginData.token}`
+      }
+    })
+
+
+    await request.post('http://localhost:3003/api/blogs', {
+      data: {
+        title: 'middle',
+        author: 'Nick',
+        url: 'middle.com',
+        likes: 5
+      },
+      headers: {
+        Authorization: `Bearer ${loginData.token}`
+      }
+    })
+
+    await page.reload()
+    
+    const blogs = page.locator('.blog')
+
+    await expect(blogs.nth(0)).toContainText('highest')
+    await expect(blogs.nth(1)).toContainText('middle')
+    await expect(blogs.nth(2)).toContainText('lowest')
+  })
 })
