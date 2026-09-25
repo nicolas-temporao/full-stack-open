@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import blogService from './services/blogs'
 import LoginForm from './components/LoginForm'
 import BlogList from './components/BlogList'
+import BlogView from './components/BlogView'
+import BlogForm from './components/BlogForm'
 import loginService from './services/login'
 import Notification from './components/Notification'
 import './index.css'
@@ -10,7 +12,6 @@ import {
   BrowserRouter as Router,
   Routes, Route, Link, Navigate
 } from 'react-router-dom'
-
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -88,19 +89,23 @@ const App = () => {
   }
 
   const handleLike = async(blog) => {
-    const updatedBlog = {
-      ...blog,
-      likes: blog.likes + 1
-    }
-    const returnedBlog = await blogService.update(blog.id, updatedBlog)
+    if (user) {
+        const updatedBlog = {
+          ...blog,
+          likes: blog.likes + 1
+        }
+        const returnedBlog = await blogService.update(blog.id, updatedBlog)
 
-    const blogWithUser = {
-      ...returnedBlog,
-      user: blog.user
-    }
+        const blogWithUser = {
+          ...returnedBlog,
+          user: blog.user
+        }
 
-    setBlogs(blogs.map(blog =>
-      blog.id === blogWithUser.id ? blogWithUser : blog))
+        setBlogs(blogs.map(blog =>
+          blog.id === blogWithUser.id ? blogWithUser : blog))
+    } else{
+      showMessage('Only logged in users can like.', 'error')
+    }
   }
 
   const handleRemove = async(blog) => {
@@ -123,18 +128,24 @@ const App = () => {
       <div>
         <Notification message={message} type={messageType} />
 
-        <div>
+        <div className="navBar">
           <Link to="/">blogs</Link>
 
           {user === null ? (
             <Link to="/login">login</Link>
           ) : (
-            <div>
-              <p>{user.name} logged in.</p>
+            <>
+              <Link to="/create">create new</Link>
               <button onClick={handleLogout}>Logout</button>
-            </div>
+            </>
+
           )}
+
         </div>
+
+        {user !== null && (
+          <p>{user.name} logged in.</p>
+        )}
 
         <Routes>
           <Route
@@ -164,6 +175,25 @@ const App = () => {
               ) : (
                 <Navigate to="/" />
               )
+            }
+          />
+
+          <Route 
+            path="/blogs/:id"
+            element={
+              <BlogView 
+                blogs={blogs}
+                handleLike={handleLike}
+                user={user}
+                handleRemove={handleRemove}
+              />
+            }
+          />
+
+          <Route
+            path="/create"
+            element={
+              <BlogForm createBlog={handleNewBlog}/>
             }
           />
         </Routes>

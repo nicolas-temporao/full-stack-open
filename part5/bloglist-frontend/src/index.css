@@ -14,3 +14,13 @@
 .error{
     color: red
 }
+
+.navBar{
+    display: flex;
+    gap: 10px;
+    align-items: auto;
+}
+
+.navBar button {
+    width: auto;
+}
