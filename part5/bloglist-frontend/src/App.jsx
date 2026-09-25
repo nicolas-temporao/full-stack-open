@@ -109,16 +109,22 @@ const App = () => {
   }
 
   const handleRemove = async(blog) => {
-    if (window.confirm(`Remove ${blog.title} by ${blog.author}?`)){
-      try {
-        await blogService.remove(blog.id)
-        showMessage('Deleted blog successfully', 'success')
-        setBlogs(prevBlogs =>
-          prevBlogs.filter(b => b.id !== blog.id)
-        )
-      } catch {
-        showMessage('Failed to delete blog', 'error')
-      }
+    if (!window.confirm(`Remove ${blog.title} by ${blog.author}?`)) {
+      return false
+    }
+
+    try {
+      await blogService.remove(blog.id)
+
+      showMessage('Deleted blog successfully', 'success')
+      setBlogs(prevBlogs =>
+        prevBlogs.filter(b => b.id !== blog.id)
+      )
+
+      return true
+    } catch {
+      showMessage('Failed to delete blog', 'error')
+      return false
     }
   }
 
@@ -192,8 +198,8 @@ const App = () => {
 
           <Route
             path="/create"
-            element={
-              <BlogForm createBlog={handleNewBlog}/>
+            element={ user ? 
+              (<BlogForm createBlog={handleNewBlog}/>) : (<Navigate to="/login" />)
             }
           />
         </Routes>

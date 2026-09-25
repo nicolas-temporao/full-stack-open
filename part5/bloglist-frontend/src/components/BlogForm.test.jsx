@@ -1,13 +1,18 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
+import { BrowserRouter as Router } from 'react-router-dom'
 import BlogForm from './BlogForm'
 
 test('blogform calls handler with correct details', async () => {
   const createBlog = vi.fn()
   const user = userEvent.setup()
 
-  render(<BlogForm createBlog = {createBlog}/>)
+  render(
+    <Router>
+      <BlogForm createBlog = {createBlog}/>
+    </Router>
+  )
 
   const titleInput = screen.getByLabelText('Title:')
   const authorInput = screen.getByLabelText('Author:')
