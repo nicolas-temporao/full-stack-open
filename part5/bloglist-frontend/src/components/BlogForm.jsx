@@ -8,10 +8,10 @@ const BlogForm = ({ createBlog }) => {
 
   const navigate = useNavigate()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
-    createBlog({
+    await createBlog({
       title,
       author,
       url
